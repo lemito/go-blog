@@ -50,3 +50,50 @@ div.authentication-div {
     }
 }
 
+div.home-div {
+    div.button-container {
+        padding: 30px;
+        width: 95%;
+        margin: 25px auto;
+        max-width: 500px;
+        display: flex;
+        flex-direction: row;
+        background-color: #e8e8e8;
+        border-radius: 14px;
+        justify-content: space-around;
+
+        button {
+            cursor: pointer;
+            border: none;
+            padding: 15px 25px;
+            background-color: #18aeff;
+            border-radius: 6px;
+            color: white;
+        }
+
+        h2 {
+            text-align: center;
+        }
+    }
+
+    div.auth-text {
+        padding: 30px;
+        width: 95%;
+        margin: 25px auto;
+        max-width: 500px;
+        background-color: #e8e8e8;
+        border-radius: 14px;
+
+        button {
+            display: block;
+            background-color: red;
+            color: white;
+            padding: 10px;
+            border-radius: 7px;
+            border: none;
+            cursor: pointer;
+            margin: 25px 0 0 0;
+            width: 100%;
+        }
+    }
+}

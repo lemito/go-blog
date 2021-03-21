@@ -4589,20 +4589,71 @@ proto.proto.AuthServicePromiseClient.prototype.authUser = function (request, met
 };
 
 module.exports = proto.proto;
-},{"grpc-web":"node_modules/grpc-web/index.js","./services_pb.js":"proto/services_pb.js"}],"app.js":[function(require,module,exports) {
+},{"grpc-web":"node_modules/grpc-web/index.js","./services_pb.js":"proto/services_pb.js"}],"views/home.js":[function(require,module,exports) {
 "use strict";
 
-var _navigo = _interopRequireDefault(require("navigo"));
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.Home = Home;
 
-var _services_grpc_web_pb = require("./proto/services_grpc_web_pb");
+var _app = require("../app");
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+function Home() {
+  document.body.innerHTML = "";
+  var homeDiv = document.createElement("div");
+  homeDiv.classList.add("home-div");
+  var user = JSON.parse(localStorage.getItem("user"));
 
-var router = new _navigo.default();
-var authClient = new _services_grpc_web_pb.AuthServiceClient("http://localhost:9001");
-router.on("/", function () {
-  document.body.innerHTML = "Home";
-}).on("/login", function () {
+  if (user == null) {
+    var buttonContainer = document.createElement("div");
+    buttonContainer.classList.add("button-container");
+    var loginButton = document.createElement("button");
+    loginButton.innerText = "Login";
+    loginButton.addEventListener('click', function () {
+      _app.router.navigate("/login");
+    });
+    buttonContainer.appendChild(loginButton);
+    var text = document.createElement("h2");
+    text.innerText = "You are not authenticated.";
+    buttonContainer.appendChild(text);
+    var signupButton = document.createElement("button");
+    signupButton.innerText = "Sign Up";
+    signupButton.addEventListener('click', function () {
+      _app.router.navigate("/signup");
+    });
+    buttonContainer.appendChild(signupButton);
+    homeDiv.appendChild(buttonContainer);
+  } else {
+    var authText = document.createElement("div");
+    authText.classList.add("auth-text");
+    authText.innerText = "You're logged is as ".concat(user.username, " and your E-mail is ").concat(user.email);
+    var logoutBtn = document.createElement("button");
+    logoutBtn.innerText = "Logout";
+    logoutBtn.addEventListener("click", function () {
+      localStorage.setItem("user", "null");
+      localStorage.setItem("token", "null");
+      Home();
+    });
+    authText.appendChild(logoutBtn);
+    homeDiv.appendChild(authText);
+  }
+
+  document.body.appendChild(homeDiv);
+}
+},{"../app":"app.js"}],"views/login.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.Login = Login;
+
+var _app = require("../app");
+
+var _services_grpc_web_pb = require("../proto/services_grpc_web_pb");
+
+function Login() {
   document.body.innerHTML = "";
   var loginDiv = document.createElement("div");
   loginDiv.classList.add("authentication-div");
@@ -4639,7 +4690,8 @@ router.on("/", function () {
     var req = new _services_grpc_web_pb.LoginRequest();
     req.setLogin(loginInput.value);
     req.setPassword(passwordInput.value);
-    authClient.login(req, {}, function (err, res) {
+
+    _app.authClient.login(req, {}, function (err, res) {
       if (i != 0) return;
       ++i;
       if (err) return alert(err.message);
@@ -4647,7 +4699,8 @@ router.on("/", function () {
       req = new _services_grpc_web_pb.AuthUserRequest();
       req.setToken(res.getToken());
       var j = 0;
-      authClient.authUser(req, {}, function (err, res) {
+
+      _app.authClient.authUser(req, {}, function (err, res) {
         if (j != 0) return;
         ++j;
         if (err) return alert(err.message);
@@ -4657,12 +4710,27 @@ router.on("/", function () {
           email: res.getEmail()
         };
         localStorage.setItem("user", JSON.stringify(user));
+
+        _app.router.navigate("/");
       });
     });
   });
   loginDiv.appendChild(loginForm);
   document.body.appendChild(loginDiv);
-}).on("/signup", function () {
+}
+},{"../app":"app.js","../proto/services_grpc_web_pb":"proto/services_grpc_web_pb.js"}],"views/signup.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.Signup = Signup;
+
+var _services_grpc_web_pb = require("../proto/services_grpc_web_pb");
+
+var _app = require("../app");
+
+function Signup() {
   document.body.innerHTML = "";
   var signupDiv = document.createElement("div");
   signupDiv.classList.add("authentication-div");
@@ -4693,6 +4761,18 @@ router.on("/", function () {
       usernameError.innerText = "Username must not be longer than 20 characters.";
       return;
     }
+
+    var req = new _services_grpc_web_pb.UsernameUsedRequest();
+    req.setUsername(username);
+
+    _app.authClient.usernameUsed(req, {}, function (err, res) {
+      if (err) return alert(err.message);
+
+      if (res.getUsed()) {
+        usernameError.innerText = "This username is already in use. Please choose another.";
+        return;
+      }
+    });
   });
   var usernameError = document.createElement("div");
   usernameError.id = "username-error";
@@ -4722,8 +4802,22 @@ router.on("/", function () {
       return;
     }
 
-    if (!new RegExp("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$").test(email)) emailError.innerText = "Invalid E-mail";
-    return;
+    if (!new RegExp("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$").test(email)) {
+      emailError.innerText = "Invalid E-mail";
+      return;
+    }
+
+    var req = new _services_grpc_web_pb.EmailUsedRequest();
+    req.setEmail(email);
+
+    _app.authClient.emailUsed(req, {}, function (err, res) {
+      if (err) return alert(err.message);
+
+      if (res.getUsed()) {
+        emailError.innerText = "This E-mail is already in use. Please choose another.";
+        return;
+      }
+    });
   });
   var emailError = document.createElement("div");
   emailError.id = "email-error";
@@ -4767,12 +4861,14 @@ router.on("/", function () {
     request.setUsername(usernameInput.value);
     request.setEmail(emailInput.value);
     request.setPassword(passwordInput.value);
-    authClient.signUp(request, {}, function (err, res) {
+
+    _app.authClient.signUp(request, {}, function (err, res) {
       if (err) return alert(err);
       localStorage.setItem('token', res.getToken());
       request = new _services_grpc_web_pb.AuthUserRequest();
       request.setToken(res.getToken());
-      authClient.authUser(request, {}, function (err, res) {
+
+      _app.authClient.authUser(request, {}, function (err, res) {
         if (err) return alert(err);
         var user = {
           id: res.getId(),
@@ -4780,13 +4876,40 @@ router.on("/", function () {
           email: res.getEmail()
         };
         localStorage.setItem("user", JSON.stringify(user));
+
+        _app.router.navigate("/");
       });
     });
   });
   signupDiv.appendChild(signupForm);
   document.body.appendChild(signupDiv);
-}).resolve();
-},{"navigo":"node_modules/navigo/lib/navigo.min.js","./proto/services_grpc_web_pb":"proto/services_grpc_web_pb.js"}],"../../../../../usr/local/lib/node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+}
+},{"../proto/services_grpc_web_pb":"proto/services_grpc_web_pb.js","../app":"app.js"}],"app.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.authClient = exports.router = void 0;
+
+var _navigo = _interopRequireDefault(require("navigo"));
+
+var _services_grpc_web_pb = require("./proto/services_grpc_web_pb");
+
+var _home = require("./views/home");
+
+var _login = require("./views/login");
+
+var _signup = require("./views/signup");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var authClient = new _services_grpc_web_pb.AuthServiceClient("http://localhost:9001");
+exports.authClient = authClient;
+var router = new _navigo.default();
+exports.router = router;
+router.on("/", _home.Home).on("/login", _login.Login).on("/signup", _signup.Signup).resolve();
+},{"navigo":"node_modules/navigo/lib/navigo.min.js","./proto/services_grpc_web_pb":"proto/services_grpc_web_pb.js","./views/home":"views/home.js","./views/login":"views/login.js","./views/signup":"views/signup.js"}],"../../../../../usr/local/lib/node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
